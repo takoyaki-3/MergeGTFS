@@ -8,21 +8,32 @@ import (
 		"io"
 		"os"
 		"strconv"
+		"strings"
+		"sync"
 )
 
+var wg_unzip sync.WaitGroup
+
 func main() {
+	// unzip all gtfs
 	paths := dirwalk("./GTFS")
 	if err := os.Mkdir("./unzip/", 0777); err != nil {
 		fmt.Println(err)
 	}
 	for index,path := range paths {
+		if(!strings.HasSuffix(path, ".zip")){
+			continue
+		}
 		fmt.Println(index)
 		fmt.Println(path)
 		if err := os.Mkdir("./unzip/"+strconv.Itoa(index), 0777); err != nil {
 			fmt.Println(err)
 		}
-		Unzip(path,"./unzip/"+strconv.Itoa(index))
+		wg_unzip.Add(1)
+		go Unzip(path,"./unzip/"+strconv.Itoa(index))
 	}
+	wg_unzip.Wait()
+	fmt.Println("end")
 }
 
 func dirwalk(dir string) []string {
@@ -44,6 +55,7 @@ func dirwalk(dir string) []string {
 }
 
 func Unzip(src, dest string) error {
+	defer wg_unzip.Done()
 	r, err := zip.OpenReader(src)
 	if err != nil {
 			return err
