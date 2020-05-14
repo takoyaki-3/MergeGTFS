@@ -19,68 +19,9 @@ import (
 var wg_unzip,wg_load sync.WaitGroup
 var num_of_gtfs int
 
-/*
-type agency struct {
-	agency_id string
-	agency_name	string
-	agency_url string
-	agency_timezone string
-	agency_lang string
-	agency_phone string
-	agency_fare_url string
-	agency_email string
-}
-
-type stops struct {
-	stop_id string
-	stop_code	string
-	stop_name string
-	stop_desc string
-	stop_lat string
-	stop_lon string
-	zone_id string
-	stop_url string
-	location_type
-	parent_station
-	stop_timezone
-	wheelchair_boarding
-}*/
-
 type gtfs_csv struct{
 	head map[string]int
 	data [][]string
-/*	agency [][]string
-	agency_head map[string]int
-	stops [][]string
-	stops_head map[string]int
-	routes [][]string
-	routes_head map[string]int
-	trips [][]string
-	trips_head map[string]int
-	stop_times [][]string
-	stop_times_head map[string]int
-	calendar [][]string
-	calendar_head map[string]int
-	calendar_dates [][]string
-	calendar_dates_head map[string]int
-	fare_attributes [][]string
-	fare_attributes_head map[string]int
-	shapes [][]string
-	shapes_head map[string]int
-	frequencies [][]string
-	frequencies_head map[string]int
-	transfers [][]string
-	transfers_head map[string]int
-	pathways [][]string
-	pathways_head map[string]int
-	levels [][]string
-	levels_head map[string]int
-	feed_info [][]string
-	feed_info_head map[string]int
-	translations [][]string
-	translations_head map[string]int
-	attributions [][]string
-	attributions_head map[string]int*/
 }
 
 func merge_head(head1 map[string]int,head2 map[string]int)(head map[string]int){
@@ -213,23 +154,16 @@ func main() {
 	// Merge GTFS
 //	gtfs_merged_data
 
-	output_file(gtfss,"stops.txt",num_of_gtfs)
-/*	func(){
-		out_file, err := os.Create(`output.csv`)
-		if err != nil {
-				// Openエラー処理
-		}
-		defer out_file.Close()
-		output := ""
-
-		for i:=0;i<num_of_gtfs;i++ {
-			stops := gtfss[i]["stops.txt"]
-			for j,_ := range stops.data{
-				output += "," + stops.data[j][stops.head["stop_id"]] + ",," +stops.data[j][stops.head["stop_code"]] + "," + stops.data[j][stops.head["stop_lat"]] + "," + stops.data[j][stops.head["stop_lon"]] + ",,,," + stops.data[j][stops.head["stop_name"]] + "\n"
-			}
-		}
-		out_file.Write(([]byte)(output))		
-	}()*/
+	file_list := []string{"stops.txt","stop_times.txt","calendar.txt","calendar_dates.txt"}
+	var wg sync.WaitGroup
+	for _,str := range file_list{
+		wg.Add(1)
+		go func(str string){
+			defer wg.Done()
+			output_file(gtfss,str,num_of_gtfs)
+		}(str)
+	}
+	wg.Wait()
 
 	fmt.Println("end")
 }
