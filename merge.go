@@ -154,7 +154,10 @@ func main() {
 	// Merge GTFS
 //	gtfs_merged_data
 
-	file_list := []string{"stops.txt","stop_times.txt","calendar.txt","calendar_dates.txt"}
+	if err := os.Mkdir("./out/", 0777); err != nil {
+		fmt.Println(err)
+	}
+	file_list := []string{"stops.txt","stop_times.txt","calendar.txt","calendar_dates.txt","trips.txt","routes.txt","agency.txt"}
 	var wg sync.WaitGroup
 	for _,str := range file_list{
 		wg.Add(1)
@@ -169,7 +172,7 @@ func main() {
 }
 
 func output_file(gtfss map[int]gtfs_type,file_name string,num_of_gtfs int){
-	out_file, err := os.Create(file_name)
+	out_file, err := os.Create("./out/"+file_name)
 	if err != nil {
 			// Openエラー処理
 	}
@@ -208,7 +211,7 @@ func output_file(gtfss map[int]gtfs_type,file_name string,num_of_gtfs int){
 			output = append(output,'\n')
 		}
 	}
-	out_file.Write(([]byte)(output))	
+	out_file.Write(([]byte)(string(output)))
 }
 
 func load_gtfs_file(index int,filename string) (head map[string]int,records [][]string) {
