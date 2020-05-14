@@ -174,7 +174,7 @@ func output_file(gtfss map[int]gtfs_type,file_name string,num_of_gtfs int){
 			// Openエラー処理
 	}
 	defer out_file.Close()
-	output := ""
+	var output []byte
 
 	merged_head := map[string]int{} 
 	for i:=0;i<num_of_gtfs;i++ {
@@ -186,13 +186,13 @@ func output_file(gtfss map[int]gtfs_type,file_name string,num_of_gtfs int){
 	var write_head []string
 	for head,_ := range merged_head{
 		if !isf2 {
-			output += ","
+			output = append(output,',')
 		}
 		isf2=false
-		output+=head
+		output = append(output,[]byte(head)...)
 		write_head = append(write_head,head)
 	}
-	output += "\n"
+	output = append(output,'\n')
 
 	for i:=0;i<num_of_gtfs;i++ {
 		stops := gtfss[i][file_name]
@@ -200,14 +200,12 @@ func output_file(gtfss map[int]gtfs_type,file_name string,num_of_gtfs int){
 			isf := true
 			for _,head := range write_head{
 				if !isf {
-					output += ","
-//					fmt.Println(head)
-//					fmt.Println(ind)
+					output = append(output,',')
 				}
 				isf=false
-				output += stops.data[j][stops.head[head]]
+				output = append(output,[]byte(stops.data[j][stops.head[head]])...)
 			}
-			output += "\n"
+			output = append(output,'\n')
 		}
 	}
 	out_file.Write(([]byte)(output))	
