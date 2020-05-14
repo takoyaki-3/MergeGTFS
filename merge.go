@@ -13,8 +13,86 @@ import (
 		"encoding/csv"
 )
 
-var wg_unzip sync.WaitGroup
+var wg_unzip,wg_load sync.WaitGroup
 var num_of_gtfs int
+
+/*
+type agency struct {
+	agency_id string
+	agency_name	string
+	agency_url string
+	agency_timezone string
+	agency_lang string
+	agency_phone string
+	agency_fare_url string
+	agency_email string
+}
+
+type stops struct {
+	stop_id string
+	stop_code	string
+	stop_name string
+	stop_desc string
+	stop_lat string
+	stop_lon string
+	zone_id string
+	stop_url string
+	location_type
+	parent_station
+	stop_timezone
+	wheelchair_boarding
+}*/
+
+type gtfs_csv struct{
+	head map[string]int
+	data [][]string
+/*	agency [][]string
+	agency_head map[string]int
+	stops [][]string
+	stops_head map[string]int
+	routes [][]string
+	routes_head map[string]int
+	trips [][]string
+	trips_head map[string]int
+	stop_times [][]string
+	stop_times_head map[string]int
+	calendar [][]string
+	calendar_head map[string]int
+	calendar_dates [][]string
+	calendar_dates_head map[string]int
+	fare_attributes [][]string
+	fare_attributes_head map[string]int
+	shapes [][]string
+	shapes_head map[string]int
+	frequencies [][]string
+	frequencies_head map[string]int
+	transfers [][]string
+	transfers_head map[string]int
+	pathways [][]string
+	pathways_head map[string]int
+	levels [][]string
+	levels_head map[string]int
+	feed_info [][]string
+	feed_info_head map[string]int
+	translations [][]string
+	translations_head map[string]int
+	attributions [][]string
+	attributions_head map[string]int*/
+}
+
+func merge_head(head1 map[string]int,head2 map[string]int)(head map[string]int){
+	head = map[string]int{}
+	i := 0
+	for str,_ := range head1 {
+		if _, ok := head1[str]; !ok{
+			head[str] = i
+			i++	
+		}
+	}
+	return
+}
+
+type gtfs_type map[string]gtfs_csv
 
 func main() {
 	// initi
@@ -40,13 +118,46 @@ func main() {
 	}
 	wg_unzip.Wait()
 
-	// load csv
+	// load GTFS CSV
+	var gtfss map[int]gtfs_type
+	gtfss = map[int]gtfs_type{}
 	for i:=0;i<num_of_gtfs;i++ {
-		head,data := load_gtfs_file(i,"agency")
+		wg_load.Add(1)
+		go func(i int){
+			defer wg_load.Done()
+			csv_files := dirwalk("./unzip/"+strconv.Itoa(i)+"/")
+			files := gtfs_type{}
+
+			for _,file_name := range csv_files{
+				var csv_file gtfs_csv
+				csv_file.head,csv_file.data = load_gtfs_file(i,file_name)
+				files[file_name] = csv_file
+			}
+			gtfss[i]=files
+		}(i)
+	}
+	wg_load.Wait()
+
+	// 
+
+	fmt.Println(gtfss)
+/*	for i:=0;i<num_of_gtfs;i++ {
+		var gtfs gtfs_csv
+		gtfs.agency_head,gtfs.agency = load_gtfs_file(i,"agency")
+		gtfs.stops_head,gtfs.stops = load_gtfs_file(i,"stops")
+		gtfs.routes_head,gtfs.routes = load_gtfs_file(i,"routes")
+		gtfs.agency_head,gtfs.agency = load_gtfs_file(i,"agency")
+		gtfs.agency_head,gtfs.agency = load_gtfs_file(i,"agency")
+		gtfs.agency_head,gtfs.agency = load_gtfs_file(i,"agency")
+		gtfs.agency_head,gtfs.agency = load_gtfs_file(i,"agency")
+		gtfs.agency_head,gtfs.agency = load_gtfs_file(i,"agency")
+		gtfs.agency_head,gtfs.agency = load_gtfs_file(i,"agency")
 
 		fmt.Println(head)
 		fmt.Println(data)
-	}
+
+		merge_head(head,head1)
+	}*/
 	fmt.Println("end")
 }
 
@@ -55,7 +166,7 @@ func load_gtfs_file(index int,filename string) (head map[string]int,records [][]
 	head = map[string]int{}
 	records = [][]string{}
 
-	file, err := os.Open("./unzip/"+strconv.Itoa(index)+"/"+filename+".txt")
+	file, err := os.Open("./"+filename)
 	if err != nil {
 			panic(err)
 	}
@@ -92,10 +203,10 @@ func dirwalk(dir string) []string {
 
     var paths []string
     for _, file := range files {
-        if file.IsDir() {
+/*        if file.IsDir() {
             paths = append(paths, dirwalk(filepath.Join(dir, file.Name()))...)
             continue
-        }
+        }*/
         paths = append(paths, filepath.Join(dir, file.Name()))
     }
 
